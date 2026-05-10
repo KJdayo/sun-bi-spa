@@ -1,0 +1,1446 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SUN美SPA · 恵比寿プライベートサロン</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;500;600&family=Zen+Old+Mincho:wght@400;500;600&family=Noto+Serif+JP:wght@400;500;600&family=Italiana&family=Cormorant+Garamond:ital,wght@0,400;1,400&family=Marcellus&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<style>
+  html, body { margin: 0; padding: 0; }
+  * { box-sizing: border-box; -webkit-font-smoothing: antialiased; }
+  body { font-family: "Shippori Mincho", serif; background: #F7EFDF; }
+  ::selection { background: #B7813A; color: #F7EFDF; }
+  html { scroll-behavior: smooth; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<template id="__bundler_thumbnail">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <rect width="200" height="200" fill="#F7EFDF"/>
+  <circle cx="100" cy="92" r="34" fill="none" stroke="#B7813A" stroke-width="3"/>
+  <text x="100" y="150" text-anchor="middle" font-family="serif" font-size="22" fill="#3a2a1a" letter-spacing="2">SUN美SPA</text>
+</svg>
+</template>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" data-presets="env,react">
+
+// tweaks-panel.jsx
+// Reusable Tweaks shell + form-control helpers.
+//
+// Owns the host protocol (listens for __activate_edit_mode / __deactivate_edit_mode,
+// posts __edit_mode_available / __edit_mode_set_keys / __edit_mode_dismissed) so
+// individual prototypes don't re-roll it. Ships a consistent set of controls so you
+// don't hand-draw <input type="range">, segmented radios, steppers, etc.
+//
+// Usage (in an HTML file that loads React + Babel):
+//
+//   const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+//     "primaryColor": "#D97757",
+//     "palette": ["#D97757", "#29261b", "#f6f4ef"],
+//     "fontSize": 16,
+//     "density": "regular",
+//     "dark": false
+//   }/*EDITMODE-END*/;
+//
+//   function App() {
+//     const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+//     return (
+//       <div style={{ fontSize: t.fontSize, color: t.primaryColor }}>
+//         Hello
+//         <TweaksPanel>
+//           <TweakSection label="Typography" />
+//           <TweakSlider label="Font size" value={t.fontSize} min={10} max={32} unit="px"
+//                        onChange={(v) => setTweak('fontSize', v)} />
+//           <TweakRadio  label="Density" value={t.density}
+//                        options={['compact', 'regular', 'comfy']}
+//                        onChange={(v) => setTweak('density', v)} />
+//           <TweakSection label="Theme" />
+//           <TweakColor  label="Primary" value={t.primaryColor}
+//                        options={['#D97757', '#2A6FDB', '#1F8A5B', '#7A5AE0']}
+//                        onChange={(v) => setTweak('primaryColor', v)} />
+//           <TweakColor  label="Palette" value={t.palette}
+//                        options={[['#D97757', '#29261b', '#f6f4ef'],
+//                                  ['#475569', '#0f172a', '#f1f5f9']]}
+//                        onChange={(v) => setTweak('palette', v)} />
+//           <TweakToggle label="Dark mode" value={t.dark}
+//                        onChange={(v) => setTweak('dark', v)} />
+//         </TweaksPanel>
+//       </div>
+//     );
+//   }
+//
+// ─────────────────────────────────────────────────────────────────────────────
+
+const __TWEAKS_STYLE = `
+  .twk-panel{position:fixed;right:16px;bottom:16px;z-index:2147483646;width:280px;
+    max-height:calc(100vh - 32px);display:flex;flex-direction:column;
+    transform:scale(var(--dc-inv-zoom,1));transform-origin:bottom right;
+    background:rgba(250,249,247,.78);color:#29261b;
+    -webkit-backdrop-filter:blur(24px) saturate(160%);backdrop-filter:blur(24px) saturate(160%);
+    border:.5px solid rgba(255,255,255,.6);border-radius:14px;
+    box-shadow:0 1px 0 rgba(255,255,255,.5) inset,0 12px 40px rgba(0,0,0,.18);
+    font:11.5px/1.4 ui-sans-serif,system-ui,-apple-system,sans-serif;overflow:hidden}
+  .twk-hd{display:flex;align-items:center;justify-content:space-between;
+    padding:10px 8px 10px 14px;cursor:move;user-select:none}
+  .twk-hd b{font-size:12px;font-weight:600;letter-spacing:.01em}
+  .twk-x{appearance:none;border:0;background:transparent;color:rgba(41,38,27,.55);
+    width:22px;height:22px;border-radius:6px;cursor:default;font-size:13px;line-height:1}
+  .twk-x:hover{background:rgba(0,0,0,.06);color:#29261b}
+  .twk-body{padding:2px 14px 14px;display:flex;flex-direction:column;gap:10px;
+    overflow-y:auto;overflow-x:hidden;min-height:0;
+    scrollbar-width:thin;scrollbar-color:rgba(0,0,0,.15) transparent}
+  .twk-body::-webkit-scrollbar{width:8px}
+  .twk-body::-webkit-scrollbar-track{background:transparent;margin:2px}
+  .twk-body::-webkit-scrollbar-thumb{background:rgba(0,0,0,.15);border-radius:4px;
+    border:2px solid transparent;background-clip:content-box}
+  .twk-body::-webkit-scrollbar-thumb:hover{background:rgba(0,0,0,.25);
+    border:2px solid transparent;background-clip:content-box}
+  .twk-row{display:flex;flex-direction:column;gap:5px}
+  .twk-row-h{flex-direction:row;align-items:center;justify-content:space-between;gap:10px}
+  .twk-lbl{display:flex;justify-content:space-between;align-items:baseline;
+    color:rgba(41,38,27,.72)}
+  .twk-lbl>span:first-child{font-weight:500}
+  .twk-val{color:rgba(41,38,27,.5);font-variant-numeric:tabular-nums}
+
+  .twk-sect{font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+    color:rgba(41,38,27,.45);padding:10px 0 0}
+  .twk-sect:first-child{padding-top:0}
+
+  .twk-field{appearance:none;width:100%;height:26px;padding:0 8px;
+    border:.5px solid rgba(0,0,0,.1);border-radius:7px;
+    background:rgba(255,255,255,.6);color:inherit;font:inherit;outline:none}
+  .twk-field:focus{border-color:rgba(0,0,0,.25);background:rgba(255,255,255,.85)}
+  select.twk-field{padding-right:22px;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='rgba(0,0,0,.5)' d='M0 0h10L5 6z'/></svg>");
+    background-repeat:no-repeat;background-position:right 8px center}
+
+  .twk-slider{appearance:none;-webkit-appearance:none;width:100%;height:4px;margin:6px 0;
+    border-radius:999px;background:rgba(0,0,0,.12);outline:none}
+  .twk-slider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;
+    width:14px;height:14px;border-radius:50%;background:#fff;
+    border:.5px solid rgba(0,0,0,.12);box-shadow:0 1px 3px rgba(0,0,0,.2);cursor:default}
+  .twk-slider::-moz-range-thumb{width:14px;height:14px;border-radius:50%;
+    background:#fff;border:.5px solid rgba(0,0,0,.12);box-shadow:0 1px 3px rgba(0,0,0,.2);cursor:default}
+
+  .twk-seg{position:relative;display:flex;padding:2px;border-radius:8px;
+    background:rgba(0,0,0,.06);user-select:none}
+  .twk-seg-thumb{position:absolute;top:2px;bottom:2px;border-radius:6px;
+    background:rgba(255,255,255,.9);box-shadow:0 1px 2px rgba(0,0,0,.12);
+    transition:left .15s cubic-bezier(.3,.7,.4,1),width .15s}
+  .twk-seg.dragging .twk-seg-thumb{transition:none}
+  .twk-seg button{appearance:none;position:relative;z-index:1;flex:1;border:0;
+    background:transparent;color:inherit;font:inherit;font-weight:500;min-height:22px;
+    border-radius:6px;cursor:default;padding:4px 6px;line-height:1.2;
+    overflow-wrap:anywhere}
+
+  .twk-toggle{position:relative;width:32px;height:18px;border:0;border-radius:999px;
+    background:rgba(0,0,0,.15);transition:background .15s;cursor:default;padding:0}
+  .twk-toggle[data-on="1"]{background:#34c759}
+  .twk-toggle i{position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;
+    background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25);transition:transform .15s}
+  .twk-toggle[data-on="1"] i{transform:translateX(14px)}
+
+  .twk-num{display:flex;align-items:center;height:26px;padding:0 0 0 8px;
+    border:.5px solid rgba(0,0,0,.1);border-radius:7px;background:rgba(255,255,255,.6)}
+  .twk-num-lbl{font-weight:500;color:rgba(41,38,27,.6);cursor:ew-resize;
+    user-select:none;padding-right:8px}
+  .twk-num input{flex:1;min-width:0;height:100%;border:0;background:transparent;
+    font:inherit;font-variant-numeric:tabular-nums;text-align:right;padding:0 8px 0 0;
+    outline:none;color:inherit;-moz-appearance:textfield}
+  .twk-num input::-webkit-inner-spin-button,.twk-num input::-webkit-outer-spin-button{
+    -webkit-appearance:none;margin:0}
+  .twk-num-unit{padding-right:8px;color:rgba(41,38,27,.45)}
+
+  .twk-btn{appearance:none;height:26px;padding:0 12px;border:0;border-radius:7px;
+    background:rgba(0,0,0,.78);color:#fff;font:inherit;font-weight:500;cursor:default}
+  .twk-btn:hover{background:rgba(0,0,0,.88)}
+  .twk-btn.secondary{background:rgba(0,0,0,.06);color:inherit}
+  .twk-btn.secondary:hover{background:rgba(0,0,0,.1)}
+
+  .twk-swatch{appearance:none;-webkit-appearance:none;width:56px;height:22px;
+    border:.5px solid rgba(0,0,0,.1);border-radius:6px;padding:0;cursor:default;
+    background:transparent;flex-shrink:0}
+  .twk-swatch::-webkit-color-swatch-wrapper{padding:0}
+  .twk-swatch::-webkit-color-swatch{border:0;border-radius:5.5px}
+  .twk-swatch::-moz-color-swatch{border:0;border-radius:5.5px}
+
+  .twk-chips{display:flex;gap:6px}
+  .twk-chip{position:relative;appearance:none;flex:1;min-width:0;height:46px;
+    padding:0;border:0;border-radius:6px;overflow:hidden;cursor:default;
+    box-shadow:0 0 0 .5px rgba(0,0,0,.12),0 1px 2px rgba(0,0,0,.06);
+    transition:transform .12s cubic-bezier(.3,.7,.4,1),box-shadow .12s}
+  .twk-chip:hover{transform:translateY(-1px);
+    box-shadow:0 0 0 .5px rgba(0,0,0,.18),0 4px 10px rgba(0,0,0,.12)}
+  .twk-chip[data-on="1"]{box-shadow:0 0 0 1.5px rgba(0,0,0,.85),
+    0 2px 6px rgba(0,0,0,.15)}
+  .twk-chip>span{position:absolute;top:0;bottom:0;right:0;width:34%;
+    display:flex;flex-direction:column;box-shadow:-1px 0 0 rgba(0,0,0,.1)}
+  .twk-chip>span>i{flex:1;box-shadow:0 -1px 0 rgba(0,0,0,.1)}
+  .twk-chip>span>i:first-child{box-shadow:none}
+  .twk-chip svg{position:absolute;top:6px;left:6px;width:13px;height:13px;
+    filter:drop-shadow(0 1px 1px rgba(0,0,0,.3))}
+`;
+
+// ── useTweaks ───────────────────────────────────────────────────────────────
+// Single source of truth for tweak values. setTweak persists via the host
+// (__edit_mode_set_keys → host rewrites the EDITMODE block on disk).
+function useTweaks(defaults) {
+  const [values, setValues] = React.useState(defaults);
+  // Accepts either setTweak('key', value) or setTweak({ key: value, ... }) so a
+  // useState-style call doesn't write a "[object Object]" key into the persisted
+  // JSON block.
+  const setTweak = React.useCallback((keyOrEdits, val) => {
+    const edits = typeof keyOrEdits === 'object' && keyOrEdits !== null
+      ? keyOrEdits : { [keyOrEdits]: val };
+    setValues((prev) => ({ ...prev, ...edits }));
+    window.parent.postMessage({ type: '__edit_mode_set_keys', edits }, '*');
+    // Same-window signal so in-page listeners (deck-stage rail thumbnails)
+    // can react — the parent message only reaches the host, not peers.
+    window.dispatchEvent(new CustomEvent('tweakchange', { detail: edits }));
+  }, []);
+  return [values, setTweak];
+}
+
+// ── TweaksPanel ─────────────────────────────────────────────────────────────
+// Floating shell. Registers the protocol listener BEFORE announcing
+// availability — if the announce ran first, the host's activate could land
+// before our handler exists and the toolbar toggle would silently no-op.
+// The close button posts __edit_mode_dismissed so the host's toolbar toggle
+// flips off in lockstep; the host echoes __deactivate_edit_mode back which
+// is what actually hides the panel.
+function TweaksPanel({ title = 'Tweaks', noDeckControls = false, children }) {
+  const [open, setOpen] = React.useState(false);
+  const dragRef = React.useRef(null);
+  // Auto-inject a rail toggle when a <deck-stage> is on the page. The
+  // toggle drives the deck's per-viewer _railVisible via window message;
+  // state is mirrored from the same localStorage key the deck reads so
+  // the control reflects reality across reloads. The mechanism is the
+  // message — authors who want custom placement can post it directly
+  // and pass noDeckControls to suppress this one.
+  const hasDeckStage = React.useMemo(
+    () => typeof document !== 'undefined' && !!document.querySelector('deck-stage'),
+    [],
+  );
+  // Hide the toggle until the host has actually enabled the rail (the
+  // __omelette_rail_enabled window message, posted only when the
+  // omelette_deck_rail_enabled flag is on for this user). The initial read
+  // covers TweaksPanel mounting after the message already arrived; the
+  // listener covers the common case of mounting first.
+  const [railEnabled, setRailEnabled] = React.useState(
+    () => hasDeckStage && !!document.querySelector('deck-stage')?._railEnabled,
+  );
+  React.useEffect(() => {
+    if (!hasDeckStage || railEnabled) return undefined;
+    const onMsg = (e) => {
+      if (e.data && e.data.type === '__omelette_rail_enabled') setRailEnabled(true);
+    };
+    window.addEventListener('message', onMsg);
+    return () => window.removeEventListener('message', onMsg);
+  }, [hasDeckStage, railEnabled]);
+  const [railVisible, setRailVisible] = React.useState(() => {
+    try { return localStorage.getItem('deck-stage.railVisible') !== '0'; } catch (e) { return true; }
+  });
+  const toggleRail = (on) => {
+    setRailVisible(on);
+    window.postMessage({ type: '__deck_rail_visible', on }, '*');
+  };
+  const offsetRef = React.useRef({ x: 16, y: 16 });
+  const PAD = 16;
+
+  const clampToViewport = React.useCallback(() => {
+    const panel = dragRef.current;
+    if (!panel) return;
+    const w = panel.offsetWidth, h = panel.offsetHeight;
+    const maxRight = Math.max(PAD, window.innerWidth - w - PAD);
+    const maxBottom = Math.max(PAD, window.innerHeight - h - PAD);
+    offsetRef.current = {
+      x: Math.min(maxRight, Math.max(PAD, offsetRef.current.x)),
+      y: Math.min(maxBottom, Math.max(PAD, offsetRef.current.y)),
+    };
+    panel.style.right = offsetRef.current.x + 'px';
+    panel.style.bottom = offsetRef.current.y + 'px';
+  }, []);
+
+  React.useEffect(() => {
+    if (!open) return;
+    clampToViewport();
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', clampToViewport);
+      return () => window.removeEventListener('resize', clampToViewport);
+    }
+    const ro = new ResizeObserver(clampToViewport);
+    ro.observe(document.documentElement);
+    return () => ro.disconnect();
+  }, [open, clampToViewport]);
+
+  React.useEffect(() => {
+    const onMsg = (e) => {
+      const t = e?.data?.type;
+      if (t === '__activate_edit_mode') setOpen(true);
+      else if (t === '__deactivate_edit_mode') setOpen(false);
+    };
+    window.addEventListener('message', onMsg);
+    window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+    return () => window.removeEventListener('message', onMsg);
+  }, []);
+
+  const dismiss = () => {
+    setOpen(false);
+    window.parent.postMessage({ type: '__edit_mode_dismissed' }, '*');
+  };
+
+  const onDragStart = (e) => {
+    const panel = dragRef.current;
+    if (!panel) return;
+    const r = panel.getBoundingClientRect();
+    const sx = e.clientX, sy = e.clientY;
+    const startRight = window.innerWidth - r.right;
+    const startBottom = window.innerHeight - r.bottom;
+    const move = (ev) => {
+      offsetRef.current = {
+        x: startRight - (ev.clientX - sx),
+        y: startBottom - (ev.clientY - sy),
+      };
+      clampToViewport();
+    };
+    const up = () => {
+      window.removeEventListener('mousemove', move);
+      window.removeEventListener('mouseup', up);
+    };
+    window.addEventListener('mousemove', move);
+    window.addEventListener('mouseup', up);
+  };
+
+  if (!open) return null;
+  return (
+    <>
+      <style>{__TWEAKS_STYLE}</style>
+      <div ref={dragRef} className="twk-panel" data-noncommentable=""
+           style={{ right: offsetRef.current.x, bottom: offsetRef.current.y }}>
+        <div className="twk-hd" onMouseDown={onDragStart}>
+          <b>{title}</b>
+          <button className="twk-x" aria-label="Close tweaks"
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onClick={dismiss}>✕</button>
+        </div>
+        <div className="twk-body">
+          {children}
+          {hasDeckStage && railEnabled && !noDeckControls && (
+            <TweakSection label="Deck">
+              <TweakToggle label="Thumbnail rail" value={railVisible} onChange={toggleRail} />
+            </TweakSection>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ── Layout helpers ──────────────────────────────────────────────────────────
+
+function TweakSection({ label, children }) {
+  return (
+    <>
+      <div className="twk-sect">{label}</div>
+      {children}
+    </>
+  );
+}
+
+function TweakRow({ label, value, children, inline = false }) {
+  return (
+    <div className={inline ? 'twk-row twk-row-h' : 'twk-row'}>
+      <div className="twk-lbl">
+        <span>{label}</span>
+        {value != null && <span className="twk-val">{value}</span>}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+// ── Controls ────────────────────────────────────────────────────────────────
+
+function TweakSlider({ label, value, min = 0, max = 100, step = 1, unit = '', onChange }) {
+  return (
+    <TweakRow label={label} value={`${value}${unit}`}>
+      <input type="range" className="twk-slider" min={min} max={max} step={step}
+             value={value} onChange={(e) => onChange(Number(e.target.value))} />
+    </TweakRow>
+  );
+}
+
+function TweakToggle({ label, value, onChange }) {
+  return (
+    <div className="twk-row twk-row-h">
+      <div className="twk-lbl"><span>{label}</span></div>
+      <button type="button" className="twk-toggle" data-on={value ? '1' : '0'}
+              role="switch" aria-checked={!!value}
+              onClick={() => onChange(!value)}><i /></button>
+    </div>
+  );
+}
+
+function TweakRadio({ label, value, options, onChange }) {
+  const trackRef = React.useRef(null);
+  const [dragging, setDragging] = React.useState(false);
+  // The active value is read by pointer-move handlers attached for the lifetime
+  // of a drag — ref it so a stale closure doesn't fire onChange for every move.
+  const valueRef = React.useRef(value);
+  valueRef.current = value;
+
+  // Segments wrap mid-word once per-segment width runs out. The track is
+  // ~248px (280 panel − 28 body pad − 4 seg pad), each button loses 12px
+  // to its own padding, and 11.5px system-ui averages ~6.3px/char — so 2
+  // options fit ~16 chars each, 3 fit ~10. Past that (or >3 options), fall
+  // back to a dropdown rather than wrap.
+  const labelLen = (o) => String(typeof o === 'object' ? o.label : o).length;
+  const maxLen = options.reduce((m, o) => Math.max(m, labelLen(o)), 0);
+  const fitsAsSegments = maxLen <= ({ 2: 16, 3: 10 }[options.length] ?? 0);
+  if (!fitsAsSegments) {
+    // <select> emits strings — map back to the original option value so the
+    // fallback stays type-preserving (numbers, booleans) like the segment path.
+    const resolve = (s) => {
+      const m = options.find((o) => String(typeof o === 'object' ? o.value : o) === s);
+      return m === undefined ? s : typeof m === 'object' ? m.value : m;
+    };
+    return <TweakSelect label={label} value={value} options={options}
+                        onChange={(s) => onChange(resolve(s))} />;
+  }
+  const opts = options.map((o) => (typeof o === 'object' ? o : { value: o, label: o }));
+  const idx = Math.max(0, opts.findIndex((o) => o.value === value));
+  const n = opts.length;
+
+  const segAt = (clientX) => {
+    const r = trackRef.current.getBoundingClientRect();
+    const inner = r.width - 4;
+    const i = Math.floor(((clientX - r.left - 2) / inner) * n);
+    return opts[Math.max(0, Math.min(n - 1, i))].value;
+  };
+
+  const onPointerDown = (e) => {
+    setDragging(true);
+    const v0 = segAt(e.clientX);
+    if (v0 !== valueRef.current) onChange(v0);
+    const move = (ev) => {
+      if (!trackRef.current) return;
+      const v = segAt(ev.clientX);
+      if (v !== valueRef.current) onChange(v);
+    };
+    const up = () => {
+      setDragging(false);
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  };
+
+  return (
+    <TweakRow label={label}>
+      <div ref={trackRef} role="radiogroup" onPointerDown={onPointerDown}
+           className={dragging ? 'twk-seg dragging' : 'twk-seg'}>
+        <div className="twk-seg-thumb"
+             style={{ left: `calc(2px + ${idx} * (100% - 4px) / ${n})`,
+                      width: `calc((100% - 4px) / ${n})` }} />
+        {opts.map((o) => (
+          <button key={o.value} type="button" role="radio" aria-checked={o.value === value}>
+            {o.label}
+          </button>
+        ))}
+      </div>
+    </TweakRow>
+  );
+}
+
+function TweakSelect({ label, value, options, onChange }) {
+  return (
+    <TweakRow label={label}>
+      <select className="twk-field" value={value} onChange={(e) => onChange(e.target.value)}>
+        {options.map((o) => {
+          const v = typeof o === 'object' ? o.value : o;
+          const l = typeof o === 'object' ? o.label : o;
+          return <option key={v} value={v}>{l}</option>;
+        })}
+      </select>
+    </TweakRow>
+  );
+}
+
+function TweakText({ label, value, placeholder, onChange }) {
+  return (
+    <TweakRow label={label}>
+      <input className="twk-field" type="text" value={value} placeholder={placeholder}
+             onChange={(e) => onChange(e.target.value)} />
+    </TweakRow>
+  );
+}
+
+function TweakNumber({ label, value, min, max, step = 1, unit = '', onChange }) {
+  const clamp = (n) => {
+    if (min != null && n < min) return min;
+    if (max != null && n > max) return max;
+    return n;
+  };
+  const startRef = React.useRef({ x: 0, val: 0 });
+  const onScrubStart = (e) => {
+    e.preventDefault();
+    startRef.current = { x: e.clientX, val: value };
+    const decimals = (String(step).split('.')[1] || '').length;
+    const move = (ev) => {
+      const dx = ev.clientX - startRef.current.x;
+      const raw = startRef.current.val + dx * step;
+      const snapped = Math.round(raw / step) * step;
+      onChange(clamp(Number(snapped.toFixed(decimals))));
+    };
+    const up = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  };
+  return (
+    <div className="twk-num">
+      <span className="twk-num-lbl" onPointerDown={onScrubStart}>{label}</span>
+      <input type="number" value={value} min={min} max={max} step={step}
+             onChange={(e) => onChange(clamp(Number(e.target.value)))} />
+      {unit && <span className="twk-num-unit">{unit}</span>}
+    </div>
+  );
+}
+
+// Relative-luminance contrast pick — checkmarks drawn over a swatch need to
+// read on both #111 and #fafafa without per-option configuration. Hex input
+// only (#rgb / #rrggbb); named or rgb()/hsl() colors fall through to "light".
+function __twkIsLight(hex) {
+  const h = String(hex).replace('#', '');
+  const x = h.length === 3 ? h.replace(/./g, (c) => c + c) : h.padEnd(6, '0');
+  const n = parseInt(x.slice(0, 6), 16);
+  if (Number.isNaN(n)) return true;
+  const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+  return r * 299 + g * 587 + b * 114 > 148000;
+}
+
+const __TwkCheck = ({ light }) => (
+  <svg viewBox="0 0 14 14" aria-hidden="true">
+    <path d="M3 7.2 5.8 10 11 4.2" fill="none" strokeWidth="2.2"
+          strokeLinecap="round" strokeLinejoin="round"
+          stroke={light ? 'rgba(0,0,0,.78)' : '#fff'} />
+  </svg>
+);
+
+// TweakColor — curated color/palette picker. Each option is either a single
+// hex string or an array of 1-5 hex strings; the card adapts — a lone color
+// renders solid, a palette renders colors[0] as the hero (left ~2/3) with the
+// rest stacked in a sharp column on the right. onChange emits the
+// option in the shape it was passed (string stays string, array stays array).
+// Without options it falls back to the native color input for back-compat.
+function TweakColor({ label, value, options, onChange }) {
+  if (!options || !options.length) {
+    return (
+      <div className="twk-row twk-row-h">
+        <div className="twk-lbl"><span>{label}</span></div>
+        <input type="color" className="twk-swatch" value={value}
+               onChange={(e) => onChange(e.target.value)} />
+      </div>
+    );
+  }
+  // Native <input type=color> emits lowercase hex per the HTML spec, so
+  // compare case-insensitively. String() guards JSON.stringify(undefined),
+  // which returns the primitive undefined (no .toLowerCase).
+  const key = (o) => String(JSON.stringify(o)).toLowerCase();
+  const cur = key(value);
+  return (
+    <TweakRow label={label}>
+      <div className="twk-chips" role="radiogroup">
+        {options.map((o, i) => {
+          const colors = Array.isArray(o) ? o : [o];
+          const [hero, ...rest] = colors;
+          const sup = rest.slice(0, 4);
+          const on = key(o) === cur;
+          return (
+            <button key={i} type="button" className="twk-chip" role="radio"
+                    aria-checked={on} data-on={on ? '1' : '0'}
+                    aria-label={colors.join(', ')} title={colors.join(' · ')}
+                    style={{ background: hero }}
+                    onClick={() => onChange(o)}>
+              {sup.length > 0 && (
+                <span>
+                  {sup.map((c, j) => <i key={j} style={{ background: c }} />)}
+                </span>
+              )}
+              {on && <__TwkCheck light={__twkIsLight(hero)} />}
+            </button>
+          );
+        })}
+      </div>
+    </TweakRow>
+  );
+}
+
+function TweakButton({ label, onClick, secondary = false }) {
+  return (
+    <button type="button" className={secondary ? 'twk-btn secondary' : 'twk-btn'}
+            onClick={onClick}>{label}</button>
+  );
+}
+
+Object.assign(window, {
+  useTweaks, TweaksPanel, TweakSection, TweakRow,
+  TweakSlider, TweakToggle, TweakRadio, TweakSelect,
+  TweakText, TweakNumber, TweakColor, TweakButton,
+});
+
+</script>
+<script type="text/babel" data-presets="env,react">
+// SUN美SPA — Desktop Landing Page
+// Editorial layout, warm ivory + honey gold + coral
+
+const PALETTES_D = {
+  honey: { bg: '#F7EFDF', bgAlt: '#F1E4C9', ink: '#2B2014', inkSoft: '#5A4A38', accent: '#B7813A', accentSoft: '#E0B872', coral: '#E0998A', line: 'rgba(43,32,20,0.14)' },
+  ivory: { bg: '#FBF7EE', bgAlt: '#F0E6D2', ink: '#231C12', inkSoft: '#6A5A46', accent: '#C2904A', accentSoft: '#E8C994', coral: '#E5A99A', line: 'rgba(35,28,18,0.12)' },
+  blush: { bg: '#FAEFE7', bgAlt: '#F2DCC9', ink: '#2A1D17', inkSoft: '#705445', accent: '#B97755', accentSoft: '#E5B496', coral: '#DC8E78', line: 'rgba(42,29,23,0.13)' },
+};
+const FONTS_D = {
+  classic: { jp: '"Shippori Mincho", serif', display: '"Italiana", serif', sans: '"Jost", sans-serif' },
+  modern:  { jp: '"Zen Old Mincho", serif',  display: '"Cormorant Garamond", serif', sans: '"Jost", sans-serif' },
+  soft:    { jp: '"Noto Serif JP", serif',   display: '"Marcellus", serif', sans: '"Jost", sans-serif' },
+};
+
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "palette": "honey",
+  "fontSet": "classic"
+}/*EDITMODE-END*/;
+
+// ── Responsive hook ──────────────────────────────────────────────────
+function useMediaQuery(query) {
+  const [matches, setMatches] = React.useState(() =>
+    typeof window !== 'undefined' ? window.matchMedia(query).matches : false
+  );
+  React.useEffect(() => {
+    const mql = window.matchMedia(query);
+    const onChange = (e) => setMatches(e.matches);
+    if (mql.addEventListener) mql.addEventListener('change', onChange);
+    else mql.addListener(onChange);
+    setMatches(mql.matches);
+    return () => {
+      if (mql.removeEventListener) mql.removeEventListener('change', onChange);
+      else mql.removeListener(onChange);
+    };
+  }, [query]);
+  return matches;
+}
+
+// ── Sample images (Unsplash) ────────────────────────────────────────
+const U = (id, w = 1200) => `https://images.unsplash.com/photo-${id}?w=${w}&q=80&auto=format&fit=crop`;
+const IMG = {
+  hero:      U('1540555700478-4be289fbecef'),  // woman in white robe, spa
+  portrait:  U('1544161515-4ab6ce6db874'),     // asian woman portrait
+  hands:     U('1519823551278-64ac92734fb1'),  // hands / massage
+  interior:  U('1600334129128-685c5582fd35'),  // massage / interior
+  shoulder:  U('1591343395082-e120087004b4'),  // back / shoulder work
+  bust:      U('1515377905703-c4788e51af15'),  // soft / spa stones
+  holistic:  U('1571019613454-1cb2f99b2d8b'),  // yoga / movement
+  headSpa:   U('1556228852-80b6e5eeff06'),     // head / scalp
+  yomogi:    U('1556228720-195a672e8a03'),     // herbs / wellness
+  gut:       U('1610465299996-30f240ac2b1c'),  // gentle abdomen / care
+  foot:      U('1519415943484-9fa1873496d4'),  // foot / oil
+};
+
+// ── Bits ─────────────────────────────────────────────────────────────
+function ImgPH({ label, ratio = '4/5', tone = 'warm', style = {}, src }) {
+  if (src) {
+    return (
+      <div style={{ aspectRatio: ratio, width: '100%', position: 'relative', overflow: 'hidden', background: '#E5C895', ...style }}>
+        <img src={src} alt={label || ''} loading="lazy"
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+      </div>
+    );
+  }
+  const tones = { warm: { a: '#E5C895', b: '#D9B173' }, coral:{ a: '#EFC7B7', b: '#E0998A' }, deep: { a: '#9F7438', b: '#7A5524' }, soft: { a: '#EFD7B6', b: '#E2BD8A' } };
+  const t = tones[tone] || tones.warm;
+  return (
+    <div style={{ aspectRatio: ratio, width: '100%', position: 'relative', overflow: 'hidden', background: `repeating-linear-gradient(135deg, ${t.a} 0 16px, ${t.b} 16px 32px)`, ...style }}>
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(180deg, rgba(0,0,0,0) 60%, rgba(0,0,0,0.18))' }}>
+        <div style={{ fontFamily: 'ui-monospace, Menlo, monospace', fontSize: 11, letterSpacing: 1.4, color: 'rgba(255,255,255,0.95)', padding: '5px 10px', background: 'rgba(0,0,0,0.30)', borderRadius: 999 }}>{label}</div>
+      </div>
+    </div>
+  );
+}
+
+function SunMark({ size = 64, color, stroke = 0.7 }) {
+  const rays = Array.from({ length: 12 });
+  return (
+    <svg width={size} height={size} viewBox="-50 -50 100 100" style={{ display: 'block' }}>
+      <circle cx="0" cy="0" r="14" fill="none" stroke={color} strokeWidth={stroke} />
+      {rays.map((_, i) => {
+        const a = (i / 12) * Math.PI * 2;
+        return <line key={i} x1={Math.cos(a) * 20} y1={Math.sin(a) * 20} x2={Math.cos(a) * 34} y2={Math.sin(a) * 34} stroke={color} strokeWidth={stroke} strokeLinecap="round" />;
+      })}
+    </svg>
+  );
+}
+
+function SLabel({ num, en, color }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontFamily: '"Jost", sans-serif', fontSize: 12, letterSpacing: 3, textTransform: 'uppercase', color }}>
+      <span style={{ opacity: 0.6 }}>{num}</span>
+      <span style={{ width: 28, height: 1, background: 'currentColor', opacity: 0.4 }} />
+      <span>{en}</span>
+    </div>
+  );
+}
+
+function Btn({ children, primary, P, icon, full, size = 'md' }) {
+  const pad = size === 'lg' ? '18px 28px' : '14px 22px';
+  const fs  = size === 'lg' ? 14 : 13;
+  return (
+    <button style={{
+      appearance: 'none', border: 'none', cursor: 'pointer',
+      width: full ? '100%' : 'auto',
+      padding: pad, borderRadius: 999,
+      fontFamily: '"Jost", sans-serif', fontSize: fs, fontWeight: 500, letterSpacing: 1.4,
+      display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 12,
+      background: primary ? P.ink : 'transparent', color: primary ? P.bg : P.ink,
+      boxShadow: `inset 0 0 0 1px ${P.ink}`,
+      transition: 'transform 0.2s, background 0.2s, color 0.2s',
+    }}
+      onMouseEnter={(e)=>{ if(!primary){ e.currentTarget.style.background = P.ink; e.currentTarget.style.color = P.bg; }}}
+      onMouseLeave={(e)=>{ if(!primary){ e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = P.ink; }}}
+    >
+      {icon}
+      <span>{children}</span>
+      <svg width="16" height="10" viewBox="0 0 14 10" fill="none"><path d="M1 5h12m0 0L9 1m4 4L9 9" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg>
+    </button>
+  );
+}
+
+function LineI({ size = 16, color }) { return <svg width={size} height={size} viewBox="0 0 24 24" fill="none"><path d="M19 4H5a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3h3v3l4-3h7a3 3 0 0 0 3-3V7a3 3 0 0 0-3-3z" stroke={color} strokeWidth="1.4" strokeLinejoin="round"/></svg>; }
+function IGI({ size = 16, color }) { return <svg width={size} height={size} viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="5" stroke={color} strokeWidth="1.4"/><circle cx="12" cy="12" r="4" stroke={color} strokeWidth="1.4"/><circle cx="17.5" cy="6.5" r="1.1" fill={color}/></svg>; }
+
+// ── Sections ─────────────────────────────────────────────────────────
+function Nav({ P, F, isMobile }) {
+  const items = [['About', 'about'], ['Menu', 'menu'], ['Course', 'course'], ['Why', 'why'], ['Access', 'access']];
+  const [open, setOpen] = React.useState(false);
+
+  // メニュー開いてる時はスクロールロック
+  React.useEffect(() => {
+    if (open) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [open]);
+
+  return (
+    <nav style={{
+      position: 'sticky', top: 0, zIndex: 50,
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      padding: isMobile ? '14px 20px' : '20px 56px',
+      background: `${P.bg}f0`, backdropFilter: 'blur(10px)',
+      borderBottom: `1px solid ${P.line}`,
+    }}>
+      <a href="#top" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }} onClick={() => setOpen(false)}>
+        <SunMark size={isMobile ? 22 : 26} color={P.accent} stroke={1} />
+        <span style={{ fontFamily: F.display, fontSize: isMobile ? 18 : 22, letterSpacing: 1.5, color: P.ink, fontStyle: 'italic' }}>SUN美SPA</span>
+      </a>
+
+      {!isMobile && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 36 }}>
+          {items.map(([l, id]) => (
+            <a key={id} href={`#${id}`} style={{
+              fontFamily: '"Jost", sans-serif', fontSize: 12, letterSpacing: 2.5,
+              textTransform: 'uppercase', color: P.inkSoft, textDecoration: 'none',
+            }}>{l}</a>
+          ))}
+          <Btn primary P={P} icon={<LineI color={P.bg} />}>LINEで予約</Btn>
+        </div>
+      )}
+
+      {isMobile && (
+        <button
+          aria-label="メニューを開く"
+          aria-expanded={open}
+          onClick={() => setOpen(!open)}
+          style={{
+            appearance: 'none', border: 'none', background: 'transparent',
+            width: 40, height: 40, padding: 0, cursor: 'pointer',
+            display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: 5,
+          }}>
+          <span style={{
+            width: 22, height: 1.5, background: P.ink,
+            transform: open ? 'translateY(6.5px) rotate(45deg)' : 'none',
+            transition: 'transform 0.25s',
+          }} />
+          <span style={{
+            width: 22, height: 1.5, background: P.ink,
+            opacity: open ? 0 : 1, transition: 'opacity 0.2s',
+          }} />
+          <span style={{
+            width: 22, height: 1.5, background: P.ink,
+            transform: open ? 'translateY(-6.5px) rotate(-45deg)' : 'none',
+            transition: 'transform 0.25s',
+          }} />
+        </button>
+      )}
+
+      {isMobile && open && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: P.bg, zIndex: 49,
+          paddingTop: 70, paddingLeft: 28, paddingRight: 28,
+          display: 'flex', flexDirection: 'column',
+        }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 20 }}>
+            {items.map(([l, id], i) => (
+              <a key={id} href={`#${id}`}
+                onClick={() => setOpen(false)}
+                style={{
+                  fontFamily: F.display, fontStyle: 'italic',
+                  fontSize: 32, color: P.ink, textDecoration: 'none',
+                  padding: '18px 0', borderBottom: `1px solid ${P.line}`,
+                  letterSpacing: 1,
+                }}>{l}</a>
+            ))}
+          </div>
+          <div style={{ marginTop: 36, display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <Btn primary P={P} size="lg" full icon={<LineI color={P.bg} />}>公式LINEで予約</Btn>
+            <Btn P={P} size="lg" full icon={<IGI color={P.ink} />}>Instagram DM</Btn>
+          </div>
+          <div style={{ marginTop: 'auto', paddingBottom: 32, fontFamily: '"Jost", sans-serif', fontSize: 10, letterSpacing: 2, color: P.inkSoft, textTransform: 'uppercase' }}>
+            Ebisu · Tokyo
+          </div>
+        </div>
+      )}
+    </nav>
+  );
+}
+
+function Hero({ P, F, isMobile }) {
+  return (
+    <section id="top" style={{ background: P.bg, color: P.ink, padding: isMobile ? '32px 20px 70px' : '60px 56px 110px', position: 'relative', overflow: 'hidden' }}>
+      <div style={{ position: 'absolute', top: isMobile ? 40 : 80, right: isMobile ? -160 : -80, opacity: 0.32 }}>
+        <SunMark size={isMobile ? 280 : 420} color={P.accent} stroke={0.35} />
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.05fr 0.95fr', gap: isMobile ? 36 : 64, alignItems: isMobile ? 'start' : 'end', position: 'relative' }}>
+        <div style={{ order: isMobile ? 2 : 1 }}>
+          <SLabel num="01" en="Welcome to SUN美SPA" color={P.inkSoft} />
+          <h1 style={{
+            margin: isMobile ? '20px 0 0' : '32px 0 0',
+            fontFamily: F.jp, fontWeight: 500,
+            fontSize: isMobile ? 'clamp(28px, 8vw, 38px)' : 'clamp(40px, 4.6vw, 72px)', lineHeight: 1.4,
+            letterSpacing: 0.5, color: P.ink, textWrap: 'pretty',
+          }}>
+            肩こり、頭痛、<br/>
+            バストの悩みまで。<br/>
+            <span style={{ fontFamily: F.display, fontStyle: 'italic', color: P.accent, fontWeight: 400, fontSize: '0.9em' }}>太陽のように、</span><br/>
+            明るく、美しく整う<br/>
+            恵比寿のプライベートサロン。
+          </h1>
+          <p style={{
+            marginTop: isMobile ? 24 : 36, maxWidth: 520,
+            fontFamily: F.jp, fontSize: isMobile ? 14 : 16, lineHeight: 2.05, color: P.inkSoft, letterSpacing: 0.4,
+          }}>
+            年間約1,000名を施術する講師兼セラピストが、
+            あなたの身体と心に寄り添い、
+            軽やかで自信の持てる毎日へ導きます。
+          </p>
+          <div style={{ display: 'flex', gap: 12, marginTop: isMobile ? 28 : 40, flexWrap: 'wrap', flexDirection: isMobile ? 'column' : 'row' }}>
+            <Btn primary P={P} size="lg" full={isMobile} icon={<LineI color={P.bg} />}>公式LINEで予約・相談する</Btn>
+            <Btn P={P} size="lg" full={isMobile} icon={<IGI color={P.ink} />}>Instagramを見る</Btn>
+          </div>
+          <div style={{
+            marginTop: isMobile ? 40 : 56, display: 'grid',
+            gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
+            borderTop: `1px solid ${P.line}`, paddingTop: 22, gap: isMobile ? 22 : 18,
+          }}>
+            {[
+              ['Therapist', 'Harubon 齋藤'],
+              ['Access', '恵比寿駅 徒歩2分'],
+              ['Style', '完全予約制'],
+              ['Contact', 'LINE / IG DM'],
+            ].map(([k, v], i) => (
+              <div key={i}>
+                <div style={{ fontFamily: '"Jost", sans-serif', fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: P.accent, marginBottom: 6 }}>{k}</div>
+                <div style={{ fontFamily: F.jp, fontSize: 13, color: P.ink }}>{v}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div style={{ position: 'relative', order: isMobile ? 1 : 2 }}>
+          <ImgPH src={IMG.hero} label="hero" ratio={isMobile ? '4/3' : '4/5'} />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function About({ P, F, isMobile }) {
+  return (
+    <section id="about" style={{ background: P.bgAlt, color: P.ink, padding: isMobile ? '70px 20px' : '120px 56px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '0.9fr 1.1fr', gap: isMobile ? 40 : 80, alignItems: 'start' }}>
+        <div>
+          <ImgPH src={IMG.portrait} label="Saito" ratio="3/4" />
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 12 }}>
+            <ImgPH src={IMG.hands} label="technique" ratio="1/1" />
+            <ImgPH src={IMG.interior} label="interior" ratio="1/1" />
+          </div>
+        </div>
+        <div>
+          <SLabel num="02" en="About Harubon" color={P.inkSoft} />
+          <h2 style={{
+            marginTop: isMobile ? 20 : 28, marginBottom: isMobile ? 24 : 36,
+            fontFamily: F.jp, fontWeight: 500, fontSize: isMobile ? 'clamp(22px, 6vw, 28px)' : 'clamp(28px, 2.6vw, 40px)',
+            lineHeight: 1.55, letterSpacing: 0.4,
+          }}>
+            <span style={{ fontFamily: F.display, fontStyle: 'italic', color: P.accent, fontWeight: 400 }}>"明るく、健康で、美しく。"</span><br/>
+            その人らしい毎日を取り戻す<br/>お手伝いをしています。
+          </h2>
+          <p style={{ fontFamily: F.jp, fontSize: isMobile ? 14 : 16, lineHeight: 2.1, color: P.ink, marginBottom: 18, letterSpacing: 0.3 }}>
+            年間約1,000名のお客様に施術をさせていただいている齋藤です。
+            SUN美SPAでは、肩こりや頭痛、睡眠の質、バストの悩み、身体の重だるさなど、
+            女性が日々感じている不調やコンプレックスに寄り添っています。
+          </p>
+          <p style={{ fontFamily: F.jp, fontSize: isMobile ? 13.5 : 15, lineHeight: 2.1, color: P.inkSoft, letterSpacing: 0.3 }}>
+            太陽のように明るく、そして健康で美しくいられるように。
+            一人ひとりのお悩みや身体の状態に合わせて、施術だけでなく、
+            日常のケアまで丁寧にサポートします。
+          </p>
+
+          <div style={{
+            marginTop: isMobile ? 32 : 48, display: 'grid',
+            gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
+            borderTop: `1px solid ${P.line}`,
+          }}>
+            {[
+              ['1,000', '名／年の施術実績'],
+              ['5,000', '名へのトータル施術'],
+              ['99', '%のリピート率'],
+              ['Lecturer', '講師として活動'],
+            ].map(([n, l], i) => {
+              const cols = isMobile ? 2 : 4;
+              const isLastCol = (i + 1) % cols === 0;
+              return (
+                <div key={i} style={{
+                  padding: isMobile ? '20px 14px 20px 0' : '24px 18px 0 0',
+                  borderRight: isLastCol ? 'none' : `1px solid ${P.line}`,
+                  borderBottom: isMobile && i < 2 ? `1px solid ${P.line}` : 'none',
+                  paddingLeft: i === 0 || (isMobile && i === 2) ? 0 : (isMobile ? 16 : 22),
+                }}>
+                  <div style={{ fontFamily: F.display, fontSize: isMobile ? 30 : 38, color: P.accent, lineHeight: 1, letterSpacing: 0.5, fontWeight: 400 }}>{n}</div>
+                  <div style={{ marginTop: 10, fontFamily: F.jp, fontSize: 12, color: P.inkSoft, lineHeight: 1.6 }}>{l}</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Concerns({ P, F, isMobile }) {
+  const items = [
+    '背中や肩こりがつらい', '頭が重い、ズキズキする',
+    '身体が重く、だるさが抜けない', '睡眠の質が悪い',
+    '猫背や巻き肩が気になる', 'バストに自信が持てない',
+    '産後やダイエット後のバスト変化', '自律神経の乱れ・ストレス',
+    '眼精疲労、首こり、肩こり', '更年期、PMS、生理痛など',
+    '冷え、代謝の悪さ、むくみ',
+  ];
+  return (
+    <section style={{ background: P.ink, color: P.bg, padding: isMobile ? '70px 20px' : '120px 56px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1.4fr', gap: isMobile ? 40 : 80, alignItems: 'start' }}>
+        <div>
+          <SLabel num="03" en="Concerns" color={P.accentSoft} />
+          <h2 style={{
+            marginTop: isMobile ? 20 : 28,
+            fontFamily: F.jp, fontWeight: 500,
+            fontSize: isMobile ? 'clamp(22px, 5.6vw, 28px)' : 'clamp(26px, 2.4vw, 36px)',
+            lineHeight: 1.55, letterSpacing: 0.4, color: P.bg,
+          }}>
+            我慢している不調や、<br/>
+            誰にも言いづらい悩みを<br/>
+            <span style={{ color: P.accentSoft, fontFamily: F.display, fontStyle: 'italic', fontWeight: 400 }}>そろそろ、</span>本気で整えませんか？
+          </h2>
+          <p style={{ marginTop: isMobile ? 20 : 28, fontFamily: F.jp, fontSize: isMobile ? 13.5 : 14, lineHeight: 2, color: 'rgba(255,255,255,0.78)' }}>
+            SUN美SPAでは、身体のつらさと美容の悩みを分けずに、
+            <span style={{ color: P.accentSoft }}>"あなた全体"</span>
+            を見ながら整えていきます。
+          </p>
+        </div>
+        <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 0, borderTop: '1px solid rgba(255,255,255,0.18)' }}>
+          {items.map((t, i) => (
+            <li key={i} style={{
+              display: 'flex', alignItems: 'center', gap: 14,
+              padding: isMobile ? '16px 4px' : '18px 8px',
+              borderBottom: '1px solid rgba(255,255,255,0.12)',
+              borderRight: !isMobile && i % 2 === 0 ? '1px solid rgba(255,255,255,0.12)' : 'none',
+              paddingLeft: isMobile ? 0 : (i % 2 === 0 ? 0 : 18),
+              fontFamily: F.jp, fontSize: isMobile ? 14 : 14.5, color: P.bg, letterSpacing: 0.3,
+            }}>
+              <span style={{ fontFamily: '"Jost", sans-serif', fontSize: 11, opacity: 0.45, letterSpacing: 1, minWidth: 24 }}>{String(i + 1).padStart(2, '0')}</span>
+              <span style={{ width: 5, height: 5, borderRadius: 99, background: P.accentSoft, flexShrink: 0 }} />
+              <span style={{ flex: 1 }}>{t}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  );
+}
+
+function MenuRow({ idx, en, jp, sub, body, points, price, initialPrice, image, src, tone, P, F, reverse, isMobile }) {
+  return (
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
+      gap: isMobile ? 28 : 64, alignItems: 'center',
+      marginBottom: isMobile ? 56 : 90,
+    }}>
+      <div style={{ order: isMobile ? 1 : (reverse ? 2 : 1) }}>
+        <ImgPH src={src} label={image} ratio="4/3" tone={tone} />
+      </div>
+      <div style={{ order: isMobile ? 2 : (reverse ? 1 : 2) }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 14 }}>
+          <span style={{ fontFamily: F.display, fontStyle: 'italic', fontSize: isMobile ? 38 : 50, color: P.accent, lineHeight: 1, fontWeight: 400 }}>{idx}</span>
+          <div style={{ width: 40, height: 1, background: P.line }} />
+          <span style={{ fontFamily: '"Jost", sans-serif', fontSize: 11, letterSpacing: 2.5, textTransform: 'uppercase', color: P.inkSoft }}>{en}</span>
+        </div>
+        <h3 style={{ margin: 0, fontFamily: F.jp, fontWeight: 500, fontSize: isMobile ? 22 : 30, lineHeight: 1.5, color: P.ink, letterSpacing: 0.4 }}>{jp}</h3>
+        {sub && <p style={{ marginTop: 12, fontFamily: F.jp, fontSize: isMobile ? 14 : 15, lineHeight: 1.85, color: P.inkSoft }}>{sub}</p>}
+        <p style={{ marginTop: 18, fontFamily: F.jp, fontSize: isMobile ? 13.5 : 14.5, lineHeight: 2, color: P.inkSoft }}>{body}</p>
+
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 22 }}>
+          {points.slice(0, 5).map((p, i) => (
+            <span key={i} style={{
+              padding: '6px 14px', border: `1px solid ${P.line}`, borderRadius: 999,
+              fontFamily: F.jp, fontSize: 12, color: P.ink,
+            }}>{p}</span>
+          ))}
+        </div>
+
+        <div style={{
+          marginTop: 28, padding: '18px 0',
+          borderTop: `1px solid ${P.line}`, borderBottom: `1px solid ${P.line}`,
+          display: 'flex', alignItems: isMobile ? 'flex-start' : 'baseline',
+          flexDirection: isMobile ? 'column' : 'row',
+          gap: isMobile ? 14 : 24,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 24, width: isMobile ? '100%' : 'auto' }}>
+            <div>
+              <div style={{ fontFamily: '"Jost", sans-serif', fontSize: 10, letterSpacing: 2, color: P.inkSoft, textTransform: 'uppercase' }}>初回体験</div>
+              <div style={{ fontFamily: F.display, fontSize: isMobile ? 30 : 36, color: P.accent, lineHeight: 1, marginTop: 6 }}>¥{initialPrice}</div>
+            </div>
+            <div style={{ width: 1, height: 36, background: P.line }} />
+            <div>
+              <div style={{ fontFamily: '"Jost", sans-serif', fontSize: 10, letterSpacing: 2, color: P.inkSoft, textTransform: 'uppercase' }}>通常</div>
+              <div style={{ fontFamily: F.jp, fontSize: 16, color: P.inkSoft, marginTop: 8, textDecoration: 'line-through', opacity: 0.7 }}>¥{price}</div>
+            </div>
+          </div>
+          <div style={{ marginLeft: isMobile ? 0 : 'auto', width: isMobile ? '100%' : 'auto' }}>
+            <Btn P={P} full={isMobile}>相談する</Btn>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Menus({ P, F, isMobile }) {
+  const menus = [
+    { en: 'Tenshi-no-Hane Relax · 90min', jp: '天使の羽リラク 90分',
+      sub: 'リピート率99%。肩・背中・頭の重さをふわっと軽くする人気コース。',
+      price: '24,200', initialPrice: '16,500',
+      body: 'ラジオ波、EMS、吸引、ハンドマッサージを組み合わせ、背中・肩・首まわりのこわばりを丁寧にゆるめていく人気コースです。肩こり、頭の重さ、猫背、巻き肩、睡眠の質の低下などにお悩みの方におすすめです。',
+      points: ['背中、肩こり', '身体の重さ・だるさ', '睡眠の質', '頭の重さ', '猫背、巻き肩'],
+      image: 'back & shoulders', src: IMG.shoulder, tone: 'warm' },
+    { en: 'Bust-up Care · Trial', jp: 'バストアップ施術体験',
+      sub: 'バストの悩みを、ひとりで抱え込まないでください。',
+      price: '26,500', initialPrice: '16,500',
+      body: '長年のバストへのコンプレックス、産後やダイエット後の変化、下着選びの迷いなど、女性にとって繊細な悩みを丁寧にサポートします。検索しても何が正しいかわからない、豊胸までは踏み切れない、でも自分の身体にもっと自信を持ちたい。そんな方に向けた、相談しやすいバストケアメニューです。',
+      points: ['バストへの自信', '産後の変化', 'ダイエット後の変化', '下着選び', 'ふっくら印象'],
+      image: 'soft care', src: IMG.bust, tone: 'coral' },
+    { en: 'Holistic Beauty Program', jp: 'ホリスティックビューティプログラム',
+      sub: '痩せるだけではなく、巡り・姿勢・美しさまで整えるダイエットコース。',
+      price: '26,500', initialPrice: '20,000',
+      body: '身体の重さ、代謝の低下、冷え、むくみなど、表面的なダイエットだけでは変わりにくいお悩みにアプローチ。健康的で美しい身体づくりを目指す方に向けたプログラムです。',
+      points: ['代謝', 'むくみ・冷え', '姿勢', '健康的に痩せる'],
+      image: 'movement', src: IMG.holistic, tone: 'soft' },
+  ];
+  return (
+    <section id="menu" style={{ background: P.bg, color: P.ink, padding: isMobile ? '70px 20px 40px' : '120px 56px 60px' }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: isMobile ? 40 : 64, flexWrap: 'wrap', gap: 24 }}>
+        <div>
+          <SLabel num="04" en="Signature Menus" color={P.inkSoft} />
+          <h2 style={{
+            marginTop: 22,
+            fontFamily: F.jp, fontWeight: 500, fontSize: isMobile ? 'clamp(24px, 6vw, 30px)' : 'clamp(28px, 2.8vw, 44px)',
+            lineHeight: 1.45, letterSpacing: 0.4,
+          }}>
+            <span style={{ fontFamily: F.display, fontStyle: 'italic', color: P.accent, fontWeight: 400 }}>Signature.</span><br/>
+            寄り添うように整える、人気の3つのメニュー。
+          </h2>
+        </div>
+        <div style={{ maxWidth: 360, fontFamily: F.jp, fontSize: isMobile ? 13 : 14, lineHeight: 2, color: P.inkSoft }}>
+          全メニュー、初回体験価格あり。回数券・サブスクのご用意もございます。詳細はLINEまたはInstagram DMからお気軽にご相談ください。
+        </div>
+      </div>
+      {menus.map((m, i) => (
+        <MenuRow key={i} idx={String(i + 1).padStart(2, '0')} {...m} P={P} F={F} reverse={i % 2 === 1} isMobile={isMobile} />
+      ))}
+    </section>
+  );
+}
+
+function HeadSpa({ P, F, isMobile }) {
+  const items = ['自律神経の乱れ', 'ストレス', '頭痛', '眼精疲労', 'ホルモンバランス', '更年期', '生理痛・PMS', '頭肩首こり', 'やる気が出ない', '顔のたるみ・むくみ'];
+  return (
+    <section style={{ background: `linear-gradient(180deg, ${P.bgAlt} 0%, ${P.bg} 100%)`, color: P.ink, padding: isMobile ? '70px 20px' : '120px 56px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.1fr 0.9fr', gap: isMobile ? 32 : 80, alignItems: 'center' }}>
+        <ImgPH src={IMG.headSpa} label="dry head spa" ratio="5/4" />
+        <div>
+          <SLabel num="07" en="Brain Reset Head Spa" color={P.inkSoft} />
+          <h2 style={{
+            marginTop: isMobile ? 20 : 28,
+            fontFamily: F.jp, fontWeight: 500, fontSize: isMobile ? 'clamp(22px, 5.6vw, 28px)' : 'clamp(28px, 2.6vw, 40px)', lineHeight: 1.5, letterSpacing: 0.4,
+          }}>
+            頭・心・身体を<br/>ふっとゆるめる、<br/>
+            <span style={{ fontFamily: F.display, fontStyle: 'italic', color: P.accent, fontWeight: 400 }}>Brain Reset.</span><br/>
+            脳リセットドライヘッドスパ
+          </h2>
+          <p style={{ marginTop: isMobile ? 18 : 24, fontFamily: F.jp, fontSize: isMobile ? 14 : 15, lineHeight: 2.1, color: P.inkSoft }}>
+            自律神経の乱れ、ストレス、頭の重さ、眼精疲労、首肩こり、
+            やる気の出なさなどに。忙しい毎日で緊張し続けている頭と身体を、
+            深くリセットする定番人気メニューです。
+          </p>
+          <div style={{ marginTop: 28, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {items.map((t, i) => (
+              <span key={i} style={{
+                padding: '8px 14px', background: P.bg, border: `1px solid ${P.line}`,
+                borderRadius: 999, fontFamily: F.jp, fontSize: 12.5, color: P.ink,
+              }}>{t}</span>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Options({ P, F, isMobile }) {
+  const opts = [
+    { en: 'Yomogi Steaming', jp: 'よもぎ蒸し', desc: '冷え性、婦人科系のお悩み、代謝、デトックス、妊活サポートに。', src: IMG.yomogi, tone: 'warm' },
+    { en: 'Gut Therapy · 30min', jp: '腸セラピー 30分', desc: 'お腹まわりの張りや巡りが気になる方に。', src: IMG.gut, tone: 'coral' },
+    { en: 'Foot Reflexology · 45min', jp: '足ツボ 45分', desc: '足の疲れ、むくみ、全身の巡りを整えたい方に。', src: IMG.foot, tone: 'soft' },
+  ];
+  return (
+    <section style={{ background: P.bg, color: P.ink, padding: isMobile ? '40px 20px 70px' : '60px 56px 120px' }}>
+      <div style={{ marginBottom: isMobile ? 32 : 56 }}>
+        <SLabel num="08" en="Add-on Options" color={P.inkSoft} />
+        <h2 style={{ marginTop: 22, fontFamily: F.jp, fontWeight: 500, fontSize: isMobile ? 'clamp(22px, 5.6vw, 26px)' : 'clamp(26px, 2.4vw, 36px)', lineHeight: 1.5, letterSpacing: 0.4 }}>
+          その日の状態に合わせて選べるオプション
+        </h2>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: isMobile ? 16 : 24 }}>
+        {opts.map((o, i) => (
+          <div key={i} style={{ border: `1px solid ${P.line}`, padding: isMobile ? 18 : 24 }}>
+            <ImgPH src={o.src} label={o.en} ratio="4/3" tone={o.tone} />
+            <div style={{ marginTop: 18, fontFamily: F.display, fontStyle: 'italic', fontSize: 14, color: P.accent, letterSpacing: 1 }}>{o.en}</div>
+            <div style={{ marginTop: 6, fontFamily: F.jp, fontSize: 20, color: P.ink, fontWeight: 500, letterSpacing: 0.4 }}>{o.jp}</div>
+            <div style={{ marginTop: 12, fontFamily: F.jp, fontSize: 13.5, lineHeight: 1.85, color: P.inkSoft }}>{o.desc}</div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function Course({ P, F, isMobile }) {
+  return (
+    <section id="course" style={{ background: P.ink, color: P.bg, padding: isMobile ? '70px 20px' : '120px 56px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1.2fr', gap: isMobile ? 32 : 80 }}>
+        <div>
+          <SLabel num="09" en="Practitioner Course" color={P.accentSoft} />
+          <h2 style={{
+            marginTop: isMobile ? 20 : 28,
+            fontFamily: F.jp, fontWeight: 500, fontSize: isMobile ? 'clamp(22px, 5.6vw, 28px)' : 'clamp(28px, 2.6vw, 40px)', lineHeight: 1.55, letterSpacing: 0.4, color: P.bg,
+          }}>
+            家族のために。<br/>サロンメニューに。<br/>開業の一歩に。<br/>
+            <span style={{ color: P.accentSoft, fontFamily: F.display, fontStyle: 'italic', fontWeight: 400 }}>リピートされる、</span><br/>
+            ドライヘッドスパを学ぶ。
+          </h2>
+          <p style={{ marginTop: isMobile ? 20 : 28, fontFamily: F.jp, fontSize: isMobile ? 14 : 15, lineHeight: 2.1, color: 'rgba(255,255,255,0.82)' }}>
+            約5,000名のお客様に施術してきた経験から生まれた、
+            リピート率の高いSUN美SPAのドライヘッドスパ。
+            家族を癒したい方、サロンのオプションに加えたい方、
+            ドライヘッドスパで開業したい方まで、目的に合わせて学べる講座です。
+          </p>
+        </div>
+        <div>
+          <div style={{ border: '1px solid rgba(255,255,255,0.18)', padding: isMobile ? 22 : 32, marginBottom: 18 }}>
+            <div style={{ fontFamily: F.display, fontStyle: 'italic', fontSize: 16, color: P.accentSoft, letterSpacing: 1 }}>Main Course</div>
+            <div style={{ marginTop: 6, fontFamily: F.jp, fontWeight: 500, fontSize: isMobile ? 18 : 22, color: P.bg, letterSpacing: 0.4 }}>脳リセットドライヘッドスパ ヘッド45分</div>
+            <dl style={{ marginTop: 24, marginBottom: 0, display: 'grid', gap: 14 }}>
+              {[
+                ['Schedule', '5〜6時間 × 2日間'],
+                ['Tuition', '受講料 ¥99,000'],
+                ['Inclusion', '施術料 ¥11,000相当の内容'],
+                ['Open dates', '12月2日 / 12月12日'],
+              ].map(([k, v], i) => (
+                <div key={i} style={{
+                  display: 'grid', gridTemplateColumns: isMobile ? '90px 1fr' : '120px 1fr', gap: 16,
+                  paddingBottom: 14, borderBottom: i === 3 ? 'none' : '1px solid rgba(255,255,255,0.12)',
+                }}>
+                  <dt style={{ fontFamily: '"Jost", sans-serif', fontSize: 11, letterSpacing: 2.5, color: P.accentSoft, textTransform: 'uppercase', paddingTop: 2 }}>{k}</dt>
+                  <dd style={{ margin: 0, fontFamily: F.jp, fontSize: isMobile ? 13.5 : 14.5, color: P.bg, lineHeight: 1.6 }}>{v}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+          <div style={{ border: '1px solid rgba(255,255,255,0.18)', padding: isMobile ? 18 : 24, marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 20, flexWrap: 'wrap' }}>
+            <div>
+              <div style={{ fontFamily: F.display, fontStyle: 'italic', fontSize: 14, color: P.accentSoft, letterSpacing: 1 }}>Optional Bundle</div>
+              <div style={{ marginTop: 4, fontFamily: F.jp, fontWeight: 500, fontSize: 17, color: P.bg }}>ドライヘッド + 足つぼ</div>
+              <div style={{ marginTop: 4, fontFamily: F.jp, fontSize: 12.5, color: 'rgba(255,255,255,0.7)' }}>2日 × 5時間</div>
+            </div>
+            <div style={{ fontFamily: F.display, fontSize: 24, color: P.accentSoft, letterSpacing: 0.5 }}>¥88,000</div>
+          </div>
+          <div style={{ fontFamily: F.jp, fontSize: 12, color: 'rgba(255,255,255,0.55)', lineHeight: 1.9, marginBottom: 24 }}>
+            ※支払：銀行振込 / クレジットカード一括（手数料3.25%）<br/>
+            ※振込手数料は受講者負担
+          </div>
+          <Btn P={{ ...P, ink: P.bg, bg: 'transparent' }} full={isMobile} icon={<LineI color={P.bg} />}>講座について公式LINEで相談する</Btn>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function WhyUs({ P, F, isMobile }) {
+  const reasons = [
+    ['01', '年間約1,000名の施術実績', '多くのお客様の身体に触れてきた経験から、一人ひとりに合わせた施術を行います。'],
+    ['02', 'リピート率99%の人気メニュー', '天使の羽リラクをはじめ、継続して通いたくなる技術と満足感を大切にしています。'],
+    ['03', '講師としても活動する専門性', '施術者としてだけでなく、技術を伝える講師としても活動しています。'],
+    ['04', '女性の繊細な悩みに寄り添う', 'バスト、PMS、更年期、産後の変化など、相談しづらい悩みも安心して話せる空間です。'],
+    ['05', '恵比寿駅徒歩2分の隠れ家', '駅近で通いやすく、完全予約制のプライベート空間でゆっくり過ごせます。'],
+  ];
+  return (
+    <section id="why" style={{ background: P.bgAlt, color: P.ink, padding: isMobile ? '70px 20px' : '120px 56px' }}>
+      <div style={{ marginBottom: isMobile ? 40 : 64 }}>
+        <SLabel num="10" en="Why SUN美SPA" color={P.inkSoft} />
+        <h2 style={{ marginTop: 22, fontFamily: F.jp, fontWeight: 500, fontSize: isMobile ? 'clamp(22px, 5.6vw, 28px)' : 'clamp(28px, 2.8vw, 44px)', lineHeight: 1.5, letterSpacing: 0.4 }}>
+          <span style={{ fontFamily: F.display, fontStyle: 'italic', color: P.accent, fontWeight: 400 }}>Why us.</span> SUN美SPAが選ばれる理由。
+        </h2>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(5, 1fr)', borderTop: `1px solid ${P.line}` }}>
+        {reasons.map(([n, t, d], i) => (
+          <div key={i} style={{
+            padding: isMobile ? '24px 0' : '32px 22px 36px',
+            borderRight: isMobile || i === reasons.length - 1 ? 'none' : `1px solid ${P.line}`,
+            borderBottom: `1px solid ${P.line}`,
+          }}>
+            <div style={{ fontFamily: F.display, fontStyle: 'italic', fontSize: 32, color: P.accent, lineHeight: 1, fontWeight: 400 }}>{n}</div>
+            <h3 style={{ marginTop: isMobile ? 14 : 24, marginBottom: 0, fontFamily: F.jp, fontWeight: 500, fontSize: 17, color: P.ink, lineHeight: 1.55, letterSpacing: 0.3 }}>{t}</h3>
+            <p style={{ marginTop: 14, marginBottom: 0, fontFamily: F.jp, fontSize: 13, lineHeight: 1.9, color: P.inkSoft }}>{d}</p>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function Booking({ P, F, isMobile }) {
+  return (
+    <section style={{ background: P.bg, color: P.ink, padding: isMobile ? '70px 20px' : '120px 56px', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
+      <div style={{ position: 'relative', maxWidth: 720, margin: '0 auto' }}>
+        <SLabel num="11" en="Booking" color={P.inkSoft} />
+        <h2 style={{
+          marginTop: 22, marginBottom: 22,
+          fontFamily: F.jp, fontWeight: 500, fontSize: isMobile ? 'clamp(22px, 6vw, 30px)' : 'clamp(28px, 3vw, 48px)', lineHeight: 1.45, letterSpacing: 0.4,
+        }}>
+          ご予約・お問い合わせは<br/>
+          <span style={{ fontFamily: F.display, fontStyle: 'italic', color: P.accent, fontWeight: 400 }}>LINE</span> または <span style={{ fontFamily: F.display, fontStyle: 'italic', color: P.accent, fontWeight: 400 }}>Instagram DM</span> から。
+        </h2>
+        <p style={{ fontFamily: F.jp, fontSize: isMobile ? 14 : 15, lineHeight: 2.1, color: P.inkSoft, marginBottom: 36 }}>
+          メニュー選びに迷っている方も、まずはお気軽にご相談ください。
+          お身体の状態やお悩みに合わせて、おすすめのメニューをご案内します。
+        </p>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 12, flexWrap: 'wrap', flexDirection: isMobile ? 'column' : 'row', alignItems: 'stretch' }}>
+          <Btn primary P={P} size="lg" full={isMobile} icon={<LineI color={P.bg} />}>公式LINEで問い合わせる</Btn>
+          <Btn P={P} size="lg" full={isMobile} icon={<IGI color={P.ink} />}>Instagram DMで相談する</Btn>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Access({ P, F, isMobile }) {
+  return (
+    <section id="access" style={{ background: P.bgAlt, color: P.ink, padding: isMobile ? '70px 20px' : '120px 56px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.2fr 1fr', gap: isMobile ? 36 : 64, alignItems: 'start' }}>
+        <div>
+          <SLabel num="12" en="Access" color={P.inkSoft} />
+          <h2 style={{ marginTop: 22, marginBottom: isMobile ? 20 : 28, fontFamily: F.display, fontWeight: 400, fontSize: isMobile ? 44 : 64, lineHeight: 1, letterSpacing: 1, color: P.ink, fontStyle: 'italic' }}>Access.</h2>
+          <div style={{ position: 'relative', aspectRatio: '4/3', width: '100%', border: `1px solid ${P.line}`, overflow: 'hidden' }}>
+            <iframe
+              title="SUN美SPA Access"
+              src="https://maps.google.com/maps?q=%E6%9D%B1%E4%BA%AC%E9%83%BD%E6%B8%8B%E8%B0%B7%E5%8C%BA%E6%81%B5%E6%AF%94%E5%AF%BF1-7-4&t=&z=16&ie=UTF8&iwloc=&output=embed"
+              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 0, filter: 'grayscale(0.2) contrast(0.95)' }}
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+            />
+          </div>
+        </div>
+        <div>
+          <dl style={{ margin: 0, display: 'grid', gap: 18 }}>
+            {[
+              ['Salon', 'SUN美SPA'],
+              ['Address', '東京都渋谷区恵比寿1-7-4\nハイライフ恵比寿 203号室'],
+              ['Access', '恵比寿駅 西口改札から徒歩2分\n餃子ダンダダンの向かいのマンション'],
+              ['Hours', '完全予約制 / Instagram・LINEから'],
+            ].map(([k, v], i) => (
+              <div key={i} style={{ display: 'grid', gridTemplateColumns: isMobile ? '90px 1fr' : '110px 1fr', paddingBottom: 18, borderBottom: `1px solid ${P.line}` }}>
+                <dt style={{ fontFamily: '"Jost", sans-serif', fontSize: 11, letterSpacing: 2.5, color: P.accent, textTransform: 'uppercase', paddingTop: 4 }}>{k}</dt>
+                <dd style={{ margin: 0, fontFamily: F.jp, fontSize: isMobile ? 14 : 15, color: P.ink, lineHeight: 1.8, whiteSpace: 'pre-line' }}>{v}</dd>
+              </div>
+            ))}
+          </dl>
+          <div style={{ marginTop: 28, padding: isMobile ? 18 : 22, background: P.bg, border: `1px dashed ${P.accent}`, fontFamily: F.jp, fontSize: 13, lineHeight: 1.9, color: P.inkSoft }}>
+            <div style={{ fontFamily: '"Jost", sans-serif', fontSize: 11, letterSpacing: 2.5, color: P.accent, textTransform: 'uppercase', marginBottom: 8 }}>Note for first visit</div>
+            プライベートサロンのため、看板は出ておりません。
+            日中は廊下の電気が付いていないため暗い場合があります。
+            203号室でインターホンを押してください。<br/>
+            ご予約時間の<strong style={{ color: P.ink }}>5分前</strong>から入室可能です。
+          </div>
+          <div style={{ marginTop: 22, padding: isMobile ? 18 : 22, background: P.bg, border: `1px solid ${P.line}`, fontFamily: F.jp, fontSize: 13, lineHeight: 1.9, color: P.inkSoft }}>
+            <div style={{ fontFamily: '"Jost", sans-serif', fontSize: 11, letterSpacing: 2.5, color: P.inkSoft, textTransform: 'uppercase', marginBottom: 8 }}>Cancel Policy</div>
+            前日・当日のキャンセルは、キャンセル料として
+            <span style={{ color: P.ink, fontWeight: 600 }}> ¥5,500 </span>
+            を頂戴いたします。ご予約の変更・キャンセルがある場合は、できるだけ早めにご連絡ください。
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function FinalCTA({ P, F, isMobile }) {
+  return (
+    <section style={{ background: `linear-gradient(180deg, ${P.bg} 0%, ${P.bgAlt} 100%)`, color: P.ink, padding: isMobile ? '80px 20px 70px' : '140px 56px 120px', position: 'relative', overflow: 'hidden', textAlign: 'center' }}>
+      <div style={{ position: 'absolute', top: 40, right: isMobile ? -200 : -120, opacity: 0.32 }}>
+        <SunMark size={isMobile ? 280 : 420} color={P.accent} stroke={0.4} />
+      </div>
+      <div style={{ position: 'relative', maxWidth: 820, margin: '0 auto' }}>
+        <SLabel num="14" en="Last Word" color={P.inkSoft} />
+        <h2 style={{
+          marginTop: 28, marginBottom: 28,
+          fontFamily: F.jp, fontWeight: 500, fontSize: isMobile ? 'clamp(24px, 6.4vw, 32px)' : 'clamp(32px, 3.6vw, 60px)', lineHeight: 1.45, letterSpacing: 0.4,
+        }}>
+          身体も心も、<br/>
+          <span style={{ fontFamily: F.display, fontStyle: 'italic', color: P.accent, fontWeight: 400 }}>もっと、</span>軽く。<br/>
+          あなたらしい美しさを<br/>
+          SUN美SPAで整えませんか？
+        </h2>
+        <p style={{ fontFamily: F.jp, fontSize: isMobile ? 14 : 15, lineHeight: 2.1, color: P.inkSoft, marginBottom: 36 }}>
+          肩こり、頭痛、バストのお悩み、睡眠の質、女性特有の不調まで。
+          まずは今のお悩みを、公式LINEまたはInstagram DMからお気軽にご相談ください。
+        </p>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 12, flexWrap: 'wrap', flexDirection: isMobile ? 'column' : 'row', alignItems: 'stretch' }}>
+          <Btn primary P={P} size="lg" full={isMobile} icon={<LineI color={P.bg} />}>公式LINEで予約・相談する</Btn>
+          <Btn P={P} size="lg" full={isMobile} icon={<IGI color={P.ink} />}>Instagramを見る</Btn>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Footer({ P, F, isMobile }) {
+  return (
+    <footer style={{ background: P.ink, color: P.bg, padding: isMobile ? '48px 20px 28px' : '64px 56px 36px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.4fr 1fr 1fr 1fr', gap: isMobile ? 32 : 48, alignItems: 'start' }}>
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 18 }}>
+            <SunMark size={32} color={P.accentSoft} stroke={1} />
+            <span style={{ fontFamily: F.display, fontSize: 26, letterSpacing: 1.5, fontStyle: 'italic' }}>SUN美SPA</span>
+          </div>
+          <p style={{ margin: 0, fontFamily: F.jp, fontSize: 12.5, lineHeight: 1.95, color: 'rgba(255,255,255,0.6)' }}>
+            Harubon · 講師 兼 セラピスト<br/>
+            年間約1,000名 / トータル約5,000名の施術実績<br/>
+            完全予約制プライベートサロン
+          </p>
+        </div>
+        <FooterCol title="Menu" items={['天使の羽リラク', 'バストアップ施術', 'ホリスティックビューティ', '脳リセットドライヘッドスパ', 'よもぎ蒸し / 腸セラピー / 足ツボ']} P={P} F={F} />
+        <FooterCol title="Salon" items={['About Harubon', '養成講座', '選ばれる理由', 'Cancel Policy']} P={P} F={F} />
+        <FooterCol title="Contact" items={['公式LINE', 'Instagram DM', '東京都渋谷区恵比寿1-7-4', 'ハイライフ恵比寿 203']} P={P} F={F} />
+      </div>
+      <div style={{ marginTop: isMobile ? 36 : 56, paddingTop: 22, borderTop: '1px solid rgba(255,255,255,0.14)', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, fontFamily: '"Jost", sans-serif', fontSize: 10.5, letterSpacing: 2, color: 'rgba(255,255,255,0.45)', textTransform: 'uppercase' }}>
+        <span>© SUN美SPA · Harubon</span>
+        <span>Ebisu · Tokyo · Japan</span>
+      </div>
+    </footer>
+  );
+}
+
+function FooterCol({ title, items, P, F }) {
+  return (
+    <div>
+      <div style={{ fontFamily: '"Jost", sans-serif', fontSize: 11, letterSpacing: 2.5, color: P.accentSoft, textTransform: 'uppercase', marginBottom: 16 }}>{title}</div>
+      <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 10 }}>
+        {items.map((it, i) => (
+          <li key={i} style={{ fontFamily: F.jp, fontSize: 13, color: 'rgba(255,255,255,0.78)', lineHeight: 1.6 }}>{it}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+// ── App ──────────────────────────────────────────────────────────────
+function App() {
+  const [tweaks, setTweak] = useTweaks(TWEAK_DEFAULTS);
+  const P = PALETTES_D[tweaks.palette] || PALETTES_D.honey;
+  const F = FONTS_D[tweaks.fontSet] || FONTS_D.classic;
+  const isMobile = useMediaQuery('(max-width: 768px)');
+
+  return (
+    <div style={{ background: P.bg, color: P.ink, minHeight: '100vh' }}>
+      <TweaksPanel title="Tweaks · SUN美SPA">
+        <TweakSection label="Palette">
+          <TweakRadio label="Color world" value={tweaks.palette}
+            options={['honey', 'ivory', 'blush']} onChange={(v) => setTweak('palette', v)} />
+        </TweakSection>
+        <TweakSection label="Type">
+          <TweakRadio label="Font set" value={tweaks.fontSet}
+            options={['classic', 'modern', 'soft']} onChange={(v) => setTweak('fontSet', v)} />
+        </TweakSection>
+      </TweaksPanel>
+
+      <Nav P={P} F={F} isMobile={isMobile} />
+      <Hero P={P} F={F} isMobile={isMobile} />
+      <About P={P} F={F} isMobile={isMobile} />
+      <Concerns P={P} F={F} isMobile={isMobile} />
+      <Menus P={P} F={F} isMobile={isMobile} />
+      <HeadSpa P={P} F={F} isMobile={isMobile} />
+      <Options P={P} F={F} isMobile={isMobile} />
+      <Course P={P} F={F} isMobile={isMobile} />
+      <WhyUs P={P} F={F} isMobile={isMobile} />
+      <Booking P={P} F={F} isMobile={isMobile} />
+      <Access P={P} F={F} isMobile={isMobile} />
+      <FinalCTA P={P} F={F} isMobile={isMobile} />
+      <Footer P={P} F={F} isMobile={isMobile} />
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+
+</script>
+</body>
+</html>
